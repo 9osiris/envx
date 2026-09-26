@@ -70,13 +70,15 @@ def main():
     p.add_argument("--env", default=".env", help="env file to load (default: .env)")
     p.add_argument("-e", action="append", default=[], metavar="KEY=VAL",
                    help="override a var on the command line, repeatable")
+    p.add_argument("--print", action="store_true",
+                   help="print resolved KEY=VAL lines and exit, don't run anything")
     p.add_argument("command", nargs=argparse.REMAINDER, help="command to run")
     args = p.parse_args()
 
     cmd = args.command
     if cmd and cmd[0] == "--":
         cmd = cmd[1:]
-    if not cmd:
+    if not cmd and not args.print:
         p.error("no command given")
 
     try:
@@ -87,14 +89,26 @@ def main():
         return 1
 
     env = os.environ.copy()
+    resolved = {}
     for key, val in loaded.items():
-        env[key] = interpolate(val, env)
+        val = interpolate(val, env)
+        env[key] = val
+        resolved[key] = val
     for override in args.e:
         if "=" not in override:
             print(f"envx: bad override {override!r}, want KEY=VAL", file=sys.stderr)
             return 1
         key, _, val = override.partition("=")
-        env[key.strip()] = interpolate(unquote(val.strip()), env)
+        key = key.strip()
+        val = interpolate(unquote(val.strip()), env)
+        env[key] = val
+        resolved[key] = val
+
+    if args.print:
+        # show what the file and overrides resolve to, run nothing
+        for key, val in resolved.items():
+            print(f"{key}={val}")
+        return 0
 
     return subprocess.run(cmd, env=env).returncode
 

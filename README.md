@@ -14,6 +14,9 @@ python envx.py --env .env.local -- npm start
 
 # override a var on the command line (repeatable)
 python envx.py -e PORT=8080 -e DEBUG=1 -- python app.py
+
+# just show the resolved vars, run nothing
+python envx.py --print
 ```
 
 handles comments, quoted values, `export KEY=VAL` prefixes, and blank
