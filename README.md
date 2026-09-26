@@ -1,37 +1,37 @@
-# watchrun
+# envx
 
-rerun a command whenever files under the given paths change. polls mtimes,
-no dependencies, works anywhere python does.
+load a `.env` file and run a command with those vars set. like `dotenv`
+but it's one file and it just runs the thing.
 
 ## usage
 
 ```bash
-# rerun the test suite when anything under src/ or tests/ changes
-python watchrun.py src tests -- pytest
+# run with vars from ./.env
+python envx.py -- python app.py
 
-# rebuild when the markdown changes
-python watchrun.py docs -- make site
+# a different file
+python envx.py --env .env.local -- npm start
 
-# clear the screen between runs so output doesn't pile up
-python watchrun.py --clear src -- python main.py
+# override a var on the command line (repeatable)
+python envx.py -e PORT=8080 -e DEBUG=1 -- python app.py
 ```
 
-runs the command once at startup, then watches. ctrl-c to stop.
+handles comments, quoted values, `export KEY=VAL` prefixes, and blank
+lines. existing environment vars are kept unless the file overrides them.
 
-hidden files and dirs (anything starting with `.`) are ignored by default;
-pass `--all` to watch them too.
+exit code of the command is passed straight through, so this is fine in
+scripts:
 
-## flags
-
-- `--clear` — clear the screen between runs
-- `--debounce SEC` — wait this long after a change before rerunning (default 0.5)
-- `--interval SEC` — seconds between change checks (default 1.0)
-- `--all` — also watch hidden files and dirs
+```bash
+python envx.py -- pytest || echo "tests failed"
+```
 
 ## notes
 
 - single file, stdlib only, no install
-- new files, deleted files, and content changes all trigger a rerun
+- missing env file is an error (exit 1)
+- lines that don't look like `KEY=VAL` are skipped with a warning
+- if your command itself starts with a dash, use the `--` separator shown above
 
 ## license
 
