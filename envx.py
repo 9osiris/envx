@@ -3,8 +3,20 @@
 
 import argparse
 import os
+import re
 import subprocess
 import sys
+
+
+VAR_RE = re.compile(r"\$(\w+)|\$\{([^}]*)\}")
+
+
+def interpolate(val, env):
+    # expand $VAR and ${VAR} from env, leave unknown ones alone
+    def sub(m):
+        name = m.group(1) or m.group(2)
+        return env.get(name, m.group(0))
+    return VAR_RE.sub(sub, val)
 
 
 def strip_inline_comment(line):
@@ -75,13 +87,14 @@ def main():
         return 1
 
     env = os.environ.copy()
-    env.update(loaded)
+    for key, val in loaded.items():
+        env[key] = interpolate(val, env)
     for override in args.e:
         if "=" not in override:
             print(f"envx: bad override {override!r}, want KEY=VAL", file=sys.stderr)
             return 1
         key, _, val = override.partition("=")
-        env[key.strip()] = unquote(val.strip())
+        env[key.strip()] = interpolate(unquote(val.strip()), env)
 
     return subprocess.run(cmd, env=env).returncode
 

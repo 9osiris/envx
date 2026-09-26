@@ -19,6 +19,18 @@ python envx.py -e PORT=8080 -e DEBUG=1 -- python app.py
 handles comments, quoted values, `export KEY=VAL` prefixes, and blank
 lines. existing environment vars are kept unless the file overrides them.
 
+values can reference other vars with `$VAR` or `${VAR}`. they resolve
+against vars defined earlier in the file and the real environment:
+
+```bash
+BASE=/opt/app
+BIN=$BASE/bin        # /opt/app/bin
+CONF=${BASE}/conf    # /opt/app/conf
+```
+
+unknown refs are left alone, and a var referencing itself just stays
+literal (no infinite loop).
+
 exit code of the command is passed straight through, so this is fine in
 scripts:
 
